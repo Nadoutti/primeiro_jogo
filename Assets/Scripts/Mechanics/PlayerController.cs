@@ -27,15 +27,26 @@ namespace Platformer.Mechanics
         /// Initial jump velocity at the start of a jump.
         /// </summary>
         public float jumpTakeOffSpeed = 7;
+        /// <summary>
+        /// How many extra jumps the player can do while in the air (1 = double jump).
+        /// </summary>
+        public int maxAirJumps = 1;
+        /// <summary>
+        /// Extra gravity multiplier while rising with the jump button released.
+        /// Gives a smooth short hop instead of an abrupt stop.
+        /// </summary>
+        public float shortJumpGravityModifier = 2f;
 
         public JumpState jumpState = JumpState.Grounded;
-        private bool stopJump;
         /*internal new*/ public Collider2D collider2d;
         /*internal new*/ public AudioSource audioSource;
         public Health health;
         public bool controlEnabled = true;
 
         bool jump;
+        bool jumpHeld;
+        bool airJump;
+        int airJumpsLeft;
         Vector2 move;
         SpriteRenderer spriteRenderer;
         internal Animator animator;
@@ -66,17 +77,26 @@ namespace Platformer.Mechanics
             if (controlEnabled)
             {
                 move.x = m_MoveAction.ReadValue<Vector2>().x;
-                if (jumpState == JumpState.Grounded && m_JumpAction.WasPressedThisFrame())
+                jumpHeld = m_JumpAction.IsPressed();
+                if (IsGrounded)
+                    airJumpsLeft = maxAirJumps;
+                if (jumpState == JumpState.Grounded && IsGrounded && m_JumpAction.WasPressedThisFrame())
                     jumpState = JumpState.PrepareToJump;
-                else if (m_JumpAction.WasReleasedThisFrame())
+                else if (!IsGrounded && airJumpsLeft > 0 && m_JumpAction.WasPressedThisFrame())
                 {
-                    stopJump = true;
-                    Schedule<PlayerStopJump>().player = this;
+                    airJumpsLeft--;
+                    airJump = true;
+                    //also covers walking off a ledge, so landing is detected afterwards.
+                    jumpState = JumpState.InFlight;
+                    Schedule<PlayerJumped>().player = this;
                 }
+                else if (m_JumpAction.WasReleasedThisFrame())
+                    Schedule<PlayerStopJump>().player = this;
             }
             else
             {
                 move.x = 0;
+                jumpHeld = false;
             }
             UpdateJumpState();
             base.Update();
@@ -90,7 +110,6 @@ namespace Platformer.Mechanics
                 case JumpState.PrepareToJump:
                     jumpState = JumpState.Jumping;
                     jump = true;
-                    stopJump = false;
                     break;
                 case JumpState.Jumping:
                     if (!IsGrounded)
@@ -119,13 +138,10 @@ namespace Platformer.Mechanics
                 velocity.y = jumpTakeOffSpeed * model.jumpModifier;
                 jump = false;
             }
-            else if (stopJump)
+            else if (airJump)
             {
-                stopJump = false;
-                if (velocity.y > 0)
-                {
-                    velocity.y = velocity.y * model.jumpDeceleration;
-                }
+                velocity.y = jumpTakeOffSpeed * model.jumpModifier;
+                airJump = false;
             }
 
             if (move.x > 0.01f)
@@ -138,6 +154,9 @@ namespace Platformer.Mechanics
 
             targetVelocity = move * maxSpeed;
         }
+
+        protected override float CurrentGravityModifier =>
+            velocity.y > 0 && !jumpHeld ? base.CurrentGravityModifier * shortJumpGravityModifier : base.CurrentGravityModifier;
 
         public enum JumpState
         {

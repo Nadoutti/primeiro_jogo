@@ -18,6 +18,21 @@ namespace Platformer.Mechanics
 
         float nextFrameTime = 0;
 
+        /// <summary>
+        /// Number of tokens in the scene.
+        /// </summary>
+        public int TotalCount { get; private set; }
+
+        /// <summary>
+        /// Number of tokens the player has collected.
+        /// </summary>
+        public int CollectedCount { get; internal set; }
+
+        /// <summary>
+        /// Has the player collected every token in the scene?
+        /// </summary>
+        public bool AllCollected => CollectedCount >= TotalCount;
+
         [ContextMenu("Find All Tokens")]
         void FindAllTokensInScene()
         {
@@ -30,6 +45,7 @@ namespace Platformer.Mechanics
             //if tokens are not empty, they've been added at editor time.
             if (tokens.Length == 0)
                 FindAllTokensInScene();
+            TotalCount = tokens.Length;
             //Register all tokens so they can work with this controller.
             for (var i = 0; i < tokens.Length; i++)
             {

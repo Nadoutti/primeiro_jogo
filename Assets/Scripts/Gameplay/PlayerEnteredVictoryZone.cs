@@ -1,6 +1,8 @@
 using Platformer.Core;
 using Platformer.Mechanics;
 using Platformer.Model;
+using Platformer.UI;
+using UnityEngine;
 
 namespace Platformer.Gameplay
 {
@@ -17,8 +19,16 @@ namespace Platformer.Gameplay
 
         public override void Execute()
         {
+            //the player only wins after collecting every token.
+            var tokens = Object.FindFirstObjectByType<TokenController>();
+            if (tokens != null && !tokens.AllCollected)
+                return;
+
             model.player.animator.SetTrigger("victory");
             model.player.controlEnabled = false;
+
+            var hud = Object.FindFirstObjectByType<GameHUD>();
+            if (hud != null) hud.ShowVictory();
         }
     }
 }

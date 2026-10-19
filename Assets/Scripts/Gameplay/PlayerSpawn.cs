@@ -1,6 +1,7 @@
 using Platformer.Core;
 using Platformer.Mechanics;
 using Platformer.Model;
+using UnityEngine;
 
 namespace Platformer.Gameplay
 {
@@ -25,6 +26,11 @@ namespace Platformer.Gameplay
             model.virtualCamera.Follow = player.transform;
             model.virtualCamera.LookAt = player.transform;
             Simulation.Schedule<EnablePlayerInput>(2f);
+
+            //bring back every enemy killed since the last life.
+            var enemies = Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (var enemy in enemies)
+                if (enemy.IsDead) enemy.Respawn();
         }
     }
 }

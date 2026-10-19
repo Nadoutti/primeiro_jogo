@@ -45,6 +45,14 @@ namespace Platformer.Mechanics
         }
 
         /// <summary>
+        /// Restore the HP of the entity to its maximum.
+        /// </summary>
+        public void Revive()
+        {
+            currentHP = maxHP;
+        }
+
+        /// <summary>
         /// Decrement the HP of the entitiy until HP reaches 0.
         /// </summary>
         public void Die()
